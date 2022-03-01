@@ -1,0 +1,61 @@
+
+version: '3'
+# volumes list.
+
+volumes:
+  mysql-data:
+
+services:
+  db:
+    image: mysql:8.0.25
+    container_name: eideasy-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+      MYSQL_DATABASE: "eideasy"
+    restart: always
+    volumes:
+      - 'mysql-data:/var/lib/mysql'
+    ports:
+      - "33066:3306"
+    networks:
+      - local
+
+
+  #Nginx Service
+  webserver:
+    image: nginx:alpine
+    container_name: eideasy-webserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "8082:80"
+      - "443:443"
+    volumes:
+      - ../www:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - local
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: digitalocean.com/php
+    container_name: eideasy-app
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    working_dir: /var/www
+    networks:
+      - local
+    volumes:
+      - ../www:/var/www
+      - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
+      - ./php/opcache.ini:/usr/local/etc/php/conf.d/opcache.ini
+
+networks:
+  local:
+    driver: bridge
+
